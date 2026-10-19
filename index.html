@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fen Bilgi Yarışması</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    font-family: Arial, sans-serif;
+    background: #eef4f8;
+    color: #183046;
+  }
+  main {
+    width: 100%;
+    max-width: 640px;
+    padding: 36px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 16px 50px #18304615;
+  }
+  .etiket {
+    color: #087f8c;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+  h1 { font-size: 30px; }
+  h2 { font-size: 23px; line-height: 1.4; }
+  #ilerleme { color: #627586; }
+  #secenekler { display: grid; gap: 12px; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .secenek {
+    text-align: left;
+    border: 2px solid #dce6ed;
+    background: white;
+    color: #183046;
+  }
+  .secenek:hover:not(:disabled) { background: #eef8fa; }
+  .secenek:disabled { cursor: default; opacity: 1; }
+  .dogru { background: #dcfce7; border-color: #15803d; }
+  .yanlis { background: #fee2e2; border-color: #b91c1c; }
+  #sonraki {
+    width: 100%;
+    border: 0;
+    background: #087f8c;
+    color: white;
+    margin-top: 12px;
+  }
+  #geriBildirim { line-height: 1.6; min-height: 52px; }
+  button:focus-visible { outline: 3px solid #183046; outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="etiket">KEŞFET • DÜŞÜN • CEVAPLA</p>
+  <h1>🔬 Fen Bilgi Yarışması</h1>
+  <p id="ilerleme"></p>
+  <h2 id="soru"></h2>
+  <div id="secenekler"></div>
+  <p id="geriBildirim" aria-live="polite"></p>
+  <button id="sonraki" hidden>Sonraki soru →</button>
+</main>
+
+<script>
+const sorular = [
+  {
+    soru: "Ses, aşağıdaki ortamların hangisinde yayılamaz?",
+    secenekler: ["Hava", "Su", "Boşluk", "Demir"],
+    dogru: 2,
+    aciklama: "Sesin yayılması için maddesel bir ortam gerekir. Bu nedenle ses boşlukta yayılamaz."
+  },
+  {
+    soru: "Bir bitki fotosentez sırasında hangi enerjiyi kimyasal enerjiye dönüştürür?",
+    secenekler: ["Ses enerjisi", "Işık enerjisi", "Hareket enerjisi", "Elektrik enerjisi"],
+    dogru: 1,
+    aciklama: "Bitkiler fotosentez sırasında ışık enerjisini besinlerde depolanan kimyasal enerjiye dönüştürür."
+  },
+  {
+    soru: "Sürtünme ihmal edildiğinde, yukarı fırlatılan bir top yükselirken ne olur?",
+    secenekler: [
+      "Kinetik ve çekim potansiyel enerjisi artar.",
+      "Kinetik enerjisi artar, çekim potansiyel enerjisi azalır.",
+      "Kinetik enerjisi azalır, çekim potansiyel enerjisi artar.",
+      "Kinetik ve çekim potansiyel enerjisi azalır."
+    ],
+    dogru: 2,
+    aciklama: "Top yükselirken yavaşlar ve kinetik enerjisi azalır. Yüksekliği arttığı için çekim potansiyel enerjisi artar."
+  }
+];
+
+let sira = 0;
+let puan = 0;
+let cevaplandi = false;
+
+const soruAlani = document.getElementById("soru");
+const secenekAlani = document.getElementById("secenekler");
+const ilerleme = document.getElementById("ilerleme");
+const geriBildirim = document.getElementById("geriBildirim");
+const sonraki = document.getElementById("sonraki");
+
+function soruyuGoster() {
+  cevaplandi = false;
+  const soru = sorular[sira];
+  ilerleme.textContent = `Soru ${sira + 1} / ${sorular.length}`;
+  soruAlani.textContent = soru.soru;
+  secenekAlani.replaceChildren();
+  geriBildirim.textContent = "";
+  sonraki.hidden = true;
+
+  soru.secenekler.forEach((metin, i) => {
+    const dugme = document.createElement("button");
+    dugme.className = "secenek";
+    dugme.textContent = `${String.fromCharCode(65 + i)}) ${metin}`;
+    dugme.onclick = () => cevapVer(i);
+    secenekAlani.appendChild(dugme);
+  });
+}
+
+function cevapVer(secilen) {
+  if (cevaplandi) return;
+  cevaplandi = true;
+  const soru = sorular[sira];
+  const dugmeler = secenekAlani.querySelectorAll("button");
+
+  dugmeler.forEach((dugme, i) => {
+    dugme.disabled = true;
+    if (i === soru.dogru) dugme.classList.add("dogru");
+    if (i === secilen && i !== soru.dogru) {
+      dugme.classList.add("yanlis");
+    }
+  });
+
+  if (secilen === soru.dogru) {
+    puan++;
+    geriBildirim.textContent = "✅ Doğru! " + soru.aciklama;
+  } else {
+    geriBildirim.textContent = "❌ Yanlış. " + soru.aciklama;
+  }
+
+  sonraki.textContent =
+    sira === sorular.length - 1 ? "Sonucumu göster →" : "Sonraki soru →";
+  sonraki.hidden = false;
+}
+
+sonraki.onclick = () => {
+  sira++;
+  if (sira < sorular.length) {
+    soruyuGoster();
+  } else {
+    ilerleme.textContent = "Yarışma tamamlandı";
+    soruAlani.textContent = `${sorular.length} sorudan ${puan} doğru! 🎉`;
+    secenekAlani.replaceChildren();
+    geriBildirim.textContent = "Yeniden deneyerek bilgilerini pekiştirebilirsin.";
+    sonraki.textContent = "Tekrar oyna";
+    sonraki.onclick = () => location.reload();
+  }
+};
+
+soruyuGoster();
+</script>
+</body>
+</html>
